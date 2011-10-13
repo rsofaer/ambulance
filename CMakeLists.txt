@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
+ENABLE_LANGUAGE(C)
+ENABLE_LANGUAGE(CXX)
 file(GLOB HEADERS "*.h")
 
 find_package(OpenMP REQUIRED)
