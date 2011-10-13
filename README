@@ -1,1 +1,12 @@
-Repository for an ambulance problem solver.
+This code implements a solution to the ambulance problem from Denis Shsasha's
+Fall 2011 Heuristic Problem Solving course.
+
+The problem statement is as follows:
+The ambulance planning real-time problem is to rescue as many people as
+possible following a disaster. The problem statement identifies a set of
+ambulances at various mobile hospital nodes a set of delays on the edges,
+various people in need of help within a certain time. The problem is to get as
+many people to the hospitals on time as possible.
+
+The problem page is available at:
+http://cs.nyu.edu/courses/fall11/CSCI-GA.2965-001/ambulance.html
