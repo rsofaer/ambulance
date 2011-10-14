@@ -1,6 +1,9 @@
 #include "ambulance_core_gtest.h"
+#include "antcolony_gtest.h"
 #include "gtest/gtest.h"
 #ifdef WIN32
+#include <time.h>
+#elif __APPLE__
 #include <time.h>
 #else
 #include <sys/time.h>
