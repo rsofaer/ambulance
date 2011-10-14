@@ -1,3 +1,4 @@
+#include "ambulance_core_gtest.h"
 #include "gtest/gtest.h"
 #ifdef WIN32
 #include <time.h>
