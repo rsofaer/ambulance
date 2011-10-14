@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
+#include <assert.h>
+#include <cmath>
 
 template <typename FeatureType>
 struct Features
@@ -41,7 +43,10 @@ class ClusterCenters
   ~ClusterCenters();
 
   //calculates the nearest center to the point and updates the center coordinates.
-  void FindNearestCenter(const Point point, Point& center);
+  void FindNearestCenter(const Point& point, Point* center);
+  
+  //calculates Grid Distance between point and center.
+  int GetGridDistance(const Point& point, const Point& center);
   
   //accessors.
   //Get coordinates of the center at an index.
@@ -54,6 +59,7 @@ class ClusterCenters
   //mutators.
   inline void SetCenterAt(int idx, const Point point)
   {
+    assert(idx < centers.size());
     centers[idx] = point;
   }
 };
