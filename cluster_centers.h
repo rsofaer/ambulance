@@ -69,12 +69,12 @@ class ClusterCenters
     m_centers[idx] = point;
   }
 
-  void UpdateCenters(const std::vector<Cluster<CoordinateType, DistanceType> >& clusters)
+  void UpdateCenters(const std::vector<Cluster<CoordinateType, DistanceType> >& clusters, const std::vector<Point>& dataSet)
   {
     assert(clusters.size() == NumCenters());
     for(int idx=0;idx<clusters.size();++idx)
     {
-      m_centers[idx] = clusters[idx].GetClusterMean();
+      m_centers[idx] = clusters[idx].GetClusterMean(dataSet);
     }
   }
 };

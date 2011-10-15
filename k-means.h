@@ -58,7 +58,7 @@ class ClusteringAlgorithms
 	cluster.UpdateClusterCenter(center);
 	cluster.PushPair(j);
       }
-      m_clusterCenters.UpdateCenters(m_clusters);
+      m_clusterCenters.UpdateCenters(m_clusters, m_dataSet);
     }
   }
   

@@ -3,6 +3,9 @@
 #include <vector>
 #include <algorithm>
 #include <assert.h>
+#include <map>
+#include <functional>
+#include <numeric>
 
 template <typename FeatureType>
 struct Features
@@ -20,6 +23,14 @@ struct Coordinates
   : x(0),
     y(0)
   {}
+  Coordinates(CoordinateType x_, CoordinateType y_)
+  : x(x_),
+    y(y_)
+  {}
+  Coordinates<CoordinateType> operator+(const Coordinates<CoordinateType>& point)
+  {
+    return Coordinates(x+point.x, y+point.y);
+  }
 };
 
 // a struct may end up improving the locality ref.
@@ -29,26 +40,21 @@ class Cluster
  private:
   typedef Coordinates<CoordinateType> Point;
   Point m_center;
- 
-  struct ClusterPointInfo
-  {
-    ClusterPointInfo()
-    : index(0),
-      distanceFromCenter(0)
-    {}
-  
-    ClusterPointInfo(int index_, DistanceType distance_)
-    : index(index_),
-      distanceFromCenter(distance_)
-    {}
-    
-    int index;
-    DistanceType distanceFromCenter;
-  };
-  
-  typedef std::vector<ClusterPointInfo> ClusterPointsInfo;
+
+  typedef std::vector<Point> Points;
+  typedef std::pair<int, DistanceType> KeyValuePair;
+
+  typedef std::map<int, DistanceType> ClusterPointsInfo;
   ClusterPointsInfo m_clusterPoints ;
  
+  struct Keys
+  {
+    int operator()(KeyValuePair tuple)
+    {
+      return tuple.first;
+    }
+  };
+
 protected:
   void UpdateClusterCenter(const Point& newCenter)
   {
@@ -58,8 +64,8 @@ protected:
   void PushPair(int idx, DistanceType distance)
   {
     assert(idx >= 0 && idx < m_clusterPoints.size());
-    ClusterPointInfo clusterPointInfo(idx,distance);
-    m_clusterPoints.push_back(clusterPointInfo);
+    // can check if the value already exsits or not.
+    m_clusterPoints.insert(std::pair<int, DistanceType>(idx, distance));
   }
  
  public:
@@ -67,8 +73,31 @@ protected:
   : m_center(),
     m_clusterPoints()
   {}
-  int ClusterSize() {return m_clusterPoints.size();}
-  Point GetClusterMean();
+
+  inline const Point& GetClusterCenter() const
+  {
+    return m_center;
+  }
+  inline std::vector<int> GetDataPointIndices()
+  {
+    std::vector<int> keys;
+    std::transform(m_clusterPoints.begin(), m_clusterPoints.end(), back_inserter(keys),Keys());
+    return keys;
+  }
+  inline int ClusterSize() {return m_clusterPoints.size();}
+  Point GetClusterMean(const Points& dataSet)
+  {
+    std::vector<int> keys = GetDataPointIndices();
+    Points dataPoints(keys.size());
+    for(int i=0;i<keys.size();++i)
+    {
+      dataPoints[i] = dataSet[keys[i]];
+    }
+    Point mean = std::accumulate(dataPoints.begin(), dataPoints.end(), std::plus<Point>());
+    mean.x = mean.x / keys.size()+1;
+    mean.y = mean.y / keys.size() +1;
+    return mean;
+  }
 };
 
 #endif //_HPS_AMBULANCE_CLUSTER_H_
