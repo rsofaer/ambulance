@@ -1,3 +1,5 @@
+#ifndef _HPS_AMBULANCE_KMEANS_H_
+#define _HPS_AMBULANCE_KMEANS_H_
 #include <vector>
 #include <map>
 #include <algorithm>
@@ -63,3 +65,4 @@ class ClusterCenters
     centers[idx] = point;
   }
 };
+#endif //_HPS_AMBULANCE_KMEANS_H_
