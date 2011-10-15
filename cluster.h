@@ -84,7 +84,11 @@ protected:
     std::transform(m_clusterPoints.begin(), m_clusterPoints.end(), back_inserter(keys),Keys());
     return keys;
   }
-  inline int ClusterSize() {return m_clusterPoints.size();}
+  inline int ClusterSize() 
+  {
+    return m_clusterPoints.size()+1;
+  }
+  
   Point GetClusterMean(const Points& dataSet)
   {
     std::vector<int> keys = GetDataPointIndices();
@@ -94,8 +98,8 @@ protected:
       dataPoints[i] = dataSet[keys[i]];
     }
     Point mean = std::accumulate(dataPoints.begin(), dataPoints.end(), std::plus<Point>());
-    mean.x = mean.x / keys.size()+1;
-    mean.y = mean.y / keys.size() +1;
+    mean.x = mean.x / ClusterSize();
+    mean.y = mean.y / ClusterSize();
     return mean;
   }
 };
