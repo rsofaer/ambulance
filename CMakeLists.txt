@@ -9,12 +9,20 @@ find_package(OpenMP REQUIRED)
 #   ambulance_core - shared objects for ambulance
 project(ambulance_core)
 set(SRCS
-    "combination.cpp")
+    "combination.cpp"
+    "data_file.cpp"
+    "ambulance_core.cpp")
 add_library(ambulance_core STATIC ${SRCS} ${HEADERS})
+
+# Copy sample data to build dir.
+file(COPY "ambusamp2010"
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 if(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+else(UNIX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif(UNIX)
 
 # Executable targets:

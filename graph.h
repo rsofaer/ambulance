@@ -10,14 +10,17 @@ namespace tsp
 {
 
 /// <summary> An unweighted, directed graph.
+template <typename NodeData>
 struct Graph
 {
 public:
   /// <summary> A graph node. </summary>
   struct Node
   {
+    Node() : data(), adjacencyList() {}
+    Node(const NodeData& data_) : data(data_), adjacencyList() {}
     typedef std::vector<Node*> AdjacencyList;
-    unsigned int id;
+    NodeData data;
     AdjacencyList adjacencyList;
   };
 
