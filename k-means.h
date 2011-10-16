@@ -28,10 +28,10 @@ struct KMeans
       // reissb -- 20111016 -- This line requires operator+ for the PointType.
       //   If this is not possible, then one could extend this template to
       //   take an addition function as well as a distance function.
-      const Point sumPoint = std::accumulate(cluster.begin(), cluster.end(),
-                                             Point(0, 0));
+      const PointType sumPoint = std::accumulate(cluster.begin(), cluster.end(),
+                                                 PointType(0, 0));
       const int clusterSize = static_cast<int>(cluster.size());
-      return Point(sumPoint.x / clusterSize, sumPoint.y / clusterSize);
+      return PointType(sumPoint.x / clusterSize, sumPoint.y / clusterSize);
     }
   };
 
@@ -143,7 +143,7 @@ void KMeans<PointType>:: Run(const int k, const int iterations,
       DistanceMeanPair& closestMean = closestMeans.at(pointIdx);
       closestMean = std::make_pair(std::numeric_limits<DistanceMeanPair::first_type>::max(),
                                    std::numeric_limits<DistanceMeanPair::second_type>::max());
-      const Point& point = points.at(pointIdx);
+      const PointType& point = points.at(pointIdx);
       int meanIdx = 0;
       for (PointList::const_iterator mean = means->begin();
            mean != means->end();
