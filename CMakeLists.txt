@@ -9,9 +9,10 @@ find_package(OpenMP REQUIRED)
 #   ambulance_core - shared objects for ambulance
 project(ambulance_core)
 set(SRCS
+    "ambulance_core.cpp"
     "combination.cpp"
     "data_file.cpp"
-    "ambulance_core.cpp")
+    "greedy.cpp")
 add_library(ambulance_core STATIC ${SRCS} ${HEADERS})
 
 # Copy sample data to build dir.
