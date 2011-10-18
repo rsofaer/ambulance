@@ -16,8 +16,8 @@ set(SRCS
 add_library(ambulance_core STATIC ${SRCS} ${HEADERS})
 
 # Copy sample data to build dir.
-file(COPY "ambusamp2010"
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY "ambusamp2010" "ambusamp2009"
+	  DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 if(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")

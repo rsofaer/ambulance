@@ -32,13 +32,11 @@ TEST(RandomHospitals, Greedy)
             << std::endl;
 }
 
-TEST(KMeansHospitals, Greedy)
+ void KmeansGreedyTest(std::string filename, unsigned int iterations)
 {
-  enum { KMeansTestIterations = 1000, };
-
   VictimList victims;
   HospitalAmbulanceList hospitalAmbulances;
-  LoadDataFile("ambusamp2010", &victims, &hospitalAmbulances);
+  LoadDataFile(filename, &victims, &hospitalAmbulances);
   // Get points and k.
   KMeans<Point>::PointList points;
   points.reserve(victims.size());
@@ -52,7 +50,7 @@ TEST(KMeansHospitals, Greedy)
   // Run k-means.
   KMeans<Point>::PointList means;
   KMeans<Point>::ClusterList clusters;
-  KMeans<Point>::Run(k, KMeansTestIterations, 1, points,
+  KMeans<Point>::Run(k, iterations, 1, points,
                      std::ptr_fun(ManhattanDistance),
                      &means, &clusters);
   // Sort clusters and hospitals based on size.
@@ -83,6 +81,14 @@ TEST(KMeansHospitals, Greedy)
   GreedyRescue::Run(victims, hospitals, &actionSequences);
   std::cout << ActionSequenceListFormatter(victims, hospitals, actionSequences)
             << std::endl;
+
+}
+
+TEST(KMeansHospitals, Greedy)
+{
+  enum { KMeansTestIterations = 1000, };
+  KmeansGreedyTest("ambusamp2010",KMeansTestIterations);
+  KmeansGreedyTest("ambusamp2009",KMeansTestIterations);
 }
 
 }

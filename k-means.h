@@ -80,7 +80,7 @@ void KMeans<PointType>:: Run(const int k, const int iterations,
   clusters->clear();
   clusters->resize(k);
   RandBoundedGenerator randClusterGenerator(k);
-  for (PointList::const_iterator point = points.begin();
+  for (typename PointList::const_iterator point = points.begin();
        point != points.end();
        ++point)
   {
@@ -88,25 +88,25 @@ void KMeans<PointType>:: Run(const int k, const int iterations,
     clusters->at(clusterIdx).push_back(*point);
   }
   // Allocate memory for iterations.
-  typedef std::pair<DistanceFunc::result_type, int> DistanceMeanPair;
+  typedef std::pair<typename DistanceFunc::result_type, int> DistanceMeanPair;
   typedef std::vector<DistanceMeanPair> DistanceMeanPairList;
   const int numPoints = static_cast<int>(points.size());
   DistanceMeanPairList closestMeans(numPoints);
   PointList prevMeans(k, PointType(0, 0));
-  std::vector<DistanceFunc::result_type> meanDeltas(k);
+  std::vector<typename DistanceFunc::result_type> meanDeltas(k);
   means->resize(k);
   // Iterate clusters.
   for(int iteration = 0; iteration < iterations; ++iteration)
   {
     // Make sure that there are no empty clusters.
-    for (ClusterList::iterator cluster = clusters->begin();
+    for (typename ClusterList::iterator cluster = clusters->begin();
          cluster != clusters->end();
          ++cluster)
     {
       // Steal a point from another cluster.
       if (cluster->empty())
       {
-        ClusterList::iterator takePt;
+        typename ClusterList::iterator takePt;
         takePt = std::find_if(clusters->begin(), clusters->end(),
                               detail::SizeTest<std::greater, 1>());
         assert(takePt != clusters->end());
@@ -124,7 +124,7 @@ void KMeans<PointType>:: Run(const int k, const int iterations,
     {
       std::transform(means->begin(), means->end(), prevMeans.begin(),
                      meanDeltas.begin(), distanceFunc);
-      const DistanceFunc::result_type deltaDist =
+      const typename DistanceFunc::result_type deltaDist =
         std::accumulate(meanDeltas.begin(), meanDeltas.end(), 0);
       if (deltaDist <= deltaDistStable)
       {
@@ -141,15 +141,15 @@ void KMeans<PointType>:: Run(const int k, const int iterations,
     {
       // Find closest mean.
       DistanceMeanPair& closestMean = closestMeans.at(pointIdx);
-      closestMean = std::make_pair(std::numeric_limits<DistanceMeanPair::first_type>::max(),
-                                   std::numeric_limits<DistanceMeanPair::second_type>::max());
+      closestMean = std::make_pair(std::numeric_limits<typename DistanceMeanPair::first_type>::max(),
+                                   std::numeric_limits<typename DistanceMeanPair::second_type>::max());
       const PointType& point = points.at(pointIdx);
       int meanIdx = 0;
-      for (PointList::const_iterator mean = means->begin();
+      for (typename PointList::const_iterator mean = means->begin();
            mean != means->end();
            ++mean, ++meanIdx)
       {
-        const DistanceFunc::result_type distance = distanceFunc(point, *mean);
+        const typename DistanceFunc::result_type distance = distanceFunc(point, *mean);
         if (distance < closestMean.first)
         {
           closestMean.first = distance;
@@ -159,8 +159,8 @@ void KMeans<PointType>:: Run(const int k, const int iterations,
     }
     // Insert points into clusters.
     {
-      PointList::const_iterator point = points.begin();
-      for (DistanceMeanPairList::const_iterator closestMean = closestMeans.begin();
+      typename PointList::const_iterator point = points.begin();
+      for (typename DistanceMeanPairList::const_iterator closestMean = closestMeans.begin();
            closestMean != closestMeans.end();
            ++closestMean, ++point)
       {
