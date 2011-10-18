@@ -10,6 +10,9 @@
 #include <cstdio>
 #include <cstdlib>
 #endif
+#ifdef __APPLE__
+#include <signal.h>
+#endif
 #include <cstring>
 #include <string>
 #include <algorithm>
