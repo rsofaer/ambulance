@@ -3,6 +3,7 @@
 #include "greedy.h"
 #include "k-means.h"
 #include "rand_bound.h"
+#include "validate_gtest.h"
 #include "gtest/gtest.h"
 
 namespace _hps_ambulance_greedy_gtest_h_
@@ -15,7 +16,8 @@ TEST(RandomHospitals, Greedy)
 
   VictimList victims;
   HospitalAmbulanceList hospitalAmbulances;
-  LoadDataFile("ambusamp2010", &victims, &hospitalAmbulances);
+  const std::string filename("ambusamp2010");
+  LoadDataFile(filename, &victims, &hospitalAmbulances);
   // Make any old hospital.
   const int numHospitals = static_cast<int>(hospitalAmbulances.size());
   HospitalList hospitals(numHospitals);
@@ -29,11 +31,17 @@ TEST(RandomHospitals, Greedy)
   // Rescue people and print output format.
   ActionSequenceList actionSequences;
   GreedyRescue::Run(victims, hospitals, &actionSequences);
-  std::cout << ActionSequenceListFormatter(victims, hospitals, actionSequences)
-            << std::endl;
+//  std::cout << ActionSequenceListFormatter(victims, hospitals, actionSequences)
+//            << std::endl;
+  int numRescued;
+  ASSERT_TRUE(ValidateAmbulance(victims, hospitals, actionSequences,
+                                &numRescued));
+  std::cout << "Rescued " << numRescued << " victims for input file "
+            << filename << "." << std::endl;
 }
 
-void KMeansGreedyTest(const std::string& filename, const int iterations)
+void KMeansGreedyTest(const std::string& filename, const int iterations,
+                      int* numRescued)
 {
   assert(iterations > 0);
 
@@ -82,16 +90,68 @@ void KMeansGreedyTest(const std::string& filename, const int iterations)
   // Rescue people and print output format.
   ActionSequenceList actionSequences;
   GreedyRescue::Run(victims, hospitals, &actionSequences);
-  std::cout << ActionSequenceListFormatter(victims, hospitals, actionSequences)
-            << std::endl;
-
+//  std::cout << ActionSequenceListFormatter(victims, hospitals, actionSequences)
+//            << std::endl;
+  ASSERT_TRUE(ValidateAmbulance(victims, hospitals, actionSequences,
+                                numRescued));
+  std::cout << "Rescued " << *numRescued << " victims for input file "
+            << filename << "." << std::endl;
 }
+
+struct GreedyRunStats
+{
+  GreedyRunStats()
+    : minSaved(std::numeric_limits<int>::max()),
+      maxSaved(std::numeric_limits<int>::min()),
+      totalSaved(0)
+  {}
+  int minSaved;
+  int maxSaved;
+  int totalSaved;
+};
 
 TEST(KMeansHospitals, Greedy)
 {
   enum { KMeansTestIterations = 1000, };
-  KMeansGreedyTest("ambusamp2010", KMeansTestIterations);
-  KMeansGreedyTest("ambusamp2009", KMeansTestIterations);
+  enum { KMeansRepeatFile = 20, };
+  {
+    GreedyRunStats runStats;
+    const std::string filename("ambusamp2010");
+    for (int repeat = 0; repeat < KMeansRepeatFile; ++repeat)
+    {
+      int numRescued;
+      KMeansGreedyTest(filename, KMeansTestIterations, &numRescued);
+      runStats.totalSaved += numRescued;
+      runStats.minSaved = std::min(runStats.minSaved, numRescued);
+      runStats.maxSaved = std::max(runStats.maxSaved, numRescued);
+    }
+    std::cout << "After " << KMeansRepeatFile << " repeats on input file "
+              << filename
+              << "rescued {min, max, avg} = {"
+              << runStats.minSaved << ", "
+              << runStats.maxSaved << ", "
+              << runStats.totalSaved / KMeansRepeatFile << "}"
+              << std::endl;
+  }
+  {
+    GreedyRunStats runStats;
+    const std::string filename("ambusamp2009");
+    for (int repeat = 0; repeat < KMeansRepeatFile; ++repeat)
+    {
+      int numRescued;
+      KMeansGreedyTest(filename, KMeansTestIterations, &numRescued);
+      runStats.totalSaved += numRescued;
+      runStats.minSaved = std::min(runStats.minSaved, numRescued);
+      runStats.maxSaved = std::max(runStats.maxSaved, numRescued);
+    }
+    std::cout << "After " << KMeansRepeatFile << " repeats on input file "
+              << filename
+              << "rescued {min, max, avg} = {"
+              << runStats.minSaved << ", "
+              << runStats.maxSaved << ", "
+              << runStats.totalSaved / KMeansRepeatFile << "}"
+              << std::endl;
+  }
 }
 
 }
