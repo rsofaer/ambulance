@@ -1,6 +1,6 @@
 #include "ambulance_core_gtest.h"
-#include "k-means_gtest.h"
 #include "rand_bound_gtest.h"
+#include "k-means_gtest.h"
 #include "greedy_gtest.h"
 #include "antcolony_gtest.h"
 #include "gtest/gtest.h"
