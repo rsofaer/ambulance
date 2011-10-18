@@ -302,8 +302,8 @@ void GreedyBase::Run(const VictimList& victims,
       std::vector<typename VictimRankGenerator<ScoreFunc>::RankPair>
       RankedVictimList;
     RankedVictimList rankVictims(bleedingVictims.size());
-    const ScoreFunc::result_type notBleedScore =
-      std::numeric_limits<ScoreFunc::result_type>::max();
+    const typename ScoreFunc::result_type notBleedScore =
+      std::numeric_limits<typename ScoreFunc::result_type>::max();
     for (; victimsPickedUp < 4; ++victimsPickedUp)
     {
       // Rank all victims based on score.
