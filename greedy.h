@@ -22,7 +22,7 @@ struct GreedyRescue
 //      const float timeMult = 1.0f / static_cast<float>(b.timeToLive);
       const float dist = static_cast<float>(ManhattanDistance(a, b.position));
       const float timeMult = static_cast<float>(b.timeToLive);
-      return (dist * dist) * timeMult;
+      return dist * timeMult;
     }
   };
   inline static void Run(const VictimList& victims,
