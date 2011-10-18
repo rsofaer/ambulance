@@ -39,6 +39,11 @@ public:
   ~Process();
 
   bool Start(const std::vector<std::string>& args);
+  inline bool Start(const std::string& cmd)
+  {
+    std::vector<std::string> args(1, cmd);
+    return Start(args);
+  }
   int Join();
   void Kill();
   int ReadStdout(std::string* str);
@@ -317,25 +322,36 @@ bool Process::Start(const std::vector<std::string>& args)
 int Process::Join()
 {
   siginfo_t info;
+  memset(&info, 0, sizeof(info));
+  if (m_process > 0)
+  {
   waitid(P_PID, m_process, &info, WEXITED);
   detail::CleanProcess(this);
+  }
   return info.si_status;
 }
 
 void Process::Kill()
 {
+  if (m_process > 0)
+  {
   kill(m_process, SIGKILL);
   detail::CleanProcess(this);
+  }
+  m_process = 0;
 }
 
 int Process::ReadStdout(std::string* str)
 {
   assert(str);
   str->clear();
+  int numRead = 0;
+  if (m_process > 0)
+  {
   char strBuff[4096] = {0};
-  int numRead;
   read(m_stdout[Fd_Read], strBuff, sizeof(strBuff));
   str->assign(strBuff);
+  }
   return numRead;
 }
 #endif
