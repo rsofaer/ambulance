@@ -44,20 +44,6 @@ struct KMeans
 
 };
 
-namespace detail
-{
-/// <summary> Simple test for class with size() member. </summary>
-template <template <typename NumericType> class Compare, int N>
-struct SizeTest
-{
-  template <typename SizeableType>
-  inline bool operator()(const SizeableType& sizeable) const
-  {
-    return Compare<size_t>()(sizeable.size(), N);
-  }
-};
-}
-  
 template <typename PointType>
 template <typename DistanceFunc>
 void KMeans<PointType>:: Run(const int k, const int iterations,
@@ -103,15 +89,21 @@ void KMeans<PointType>:: Run(const int k, const int iterations,
          cluster != clusters->end();
          ++cluster)
     {
-      // Steal a point from another cluster.
       if (cluster->empty())
       {
-        typename ClusterList::iterator takePt;
-        takePt = std::find_if(clusters->begin(), clusters->end(),
-                              detail::SizeTest<std::greater, 1>());
-        assert(takePt != clusters->end());
-        cluster->push_back(takePt->back());
-        takePt->pop_back();
+        // Steal a point from another cluster.
+        for (;;)
+        {
+          const int stealClusterIdx = RandBound(k - 1);
+          typename ClusterList::iterator takePt = clusters->begin() + stealClusterIdx;
+          takePt += (takePt == cluster);
+          if (takePt->size() > 1)
+          {
+            cluster->push_back(takePt->back());
+            takePt->pop_back();
+            break;
+          }
+        }
       }
     }
     // reissb -- 20111016 -- Mean updating may be parallelized, but it

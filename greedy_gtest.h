@@ -1,6 +1,7 @@
 #ifndef _HPS_AMBULANCE_GREEDY_GTEST_H_
 #define _HPS_AMBULANCE_GREEDY_GTEST_H_
 #include "greedy.h"
+#include "k-means.h"
 #include "rand_bound.h"
 #include "gtest/gtest.h"
 
@@ -32,8 +33,10 @@ TEST(RandomHospitals, Greedy)
             << std::endl;
 }
 
- void KmeansGreedyTest(std::string filename, unsigned int iterations)
+void KMeansGreedyTest(const std::string& filename, const int iterations)
 {
+  assert(iterations > 0);
+
   VictimList victims;
   HospitalAmbulanceList hospitalAmbulances;
   LoadDataFile(filename, &victims, &hospitalAmbulances);
@@ -87,8 +90,8 @@ TEST(RandomHospitals, Greedy)
 TEST(KMeansHospitals, Greedy)
 {
   enum { KMeansTestIterations = 1000, };
-  KmeansGreedyTest("ambusamp2010",KMeansTestIterations);
-  KmeansGreedyTest("ambusamp2009",KMeansTestIterations);
+  KMeansGreedyTest("ambusamp2010", KMeansTestIterations);
+  KMeansGreedyTest("ambusamp2009", KMeansTestIterations);
 }
 
 }
