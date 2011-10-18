@@ -1,6 +1,8 @@
 #include <cstdio>
 #include <string>
 #include <iostream>
+#include <ctime>
+#include <cstdlib>
 
 #include "ambulance_core.h"
 #include "greedy.h"
@@ -71,6 +73,7 @@ void SaveVictims(const std::string& filename, const int iterations)
 
 int main(int argc, char* argv[])
 {
+  srand(static_cast<unsigned int>(time(NULL)));
   if(argc != 2)
   {
     PrintUsage();
