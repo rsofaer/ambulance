@@ -122,5 +122,8 @@ if __name__ == '__main__':
     except AmbulanceException as e:
         print (e.msg())
     finally:
-        print ('Total saved: {}.'.format(sum(i != False for i in saved)))
+        numSaved = 0
+        for i in saved:
+            numSaved += 1 if i is not False else 0
+        print ('Total saved: {0}.'.format(numSaved))
         generate_html()

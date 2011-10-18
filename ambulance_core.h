@@ -4,6 +4,7 @@
 #include <vector>
 #include <math.h>
 #include <iosfwd>
+#include <cstdlib>
 
 namespace hps
 {

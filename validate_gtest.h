@@ -59,10 +59,14 @@ bool ValidateAmbulance(const VictimList& victims,
   }
   // Run the validator.
   Process process;
-  std::stringstream ssValidatorCmd;
-  ssValidatorCmd << "python validator.py "
-                 << inputFilename << " " << outputFilename;
-  process.Start(ssValidatorCmd.str());
+  std::vector<std::string> args(4);
+  {
+    args[0] = "python";
+    args[1] = "validator.py";
+    args[2] = inputFilename;
+    args[3] = outputFilename;
+  }
+  process.Start(args);
   std::string validatorOut;
   process.ReadStdout(&validatorOut);
   process.Join();
@@ -99,4 +103,4 @@ bool ValidateAmbulance(const VictimList& victims,
 
 }
 
-#endif _HPS_AMBULANCE_VALIDATE_GTEST_H_
+#endif //_HPS_AMBULANCE_VALIDATE_GTEST_H_
