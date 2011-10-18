@@ -15,6 +15,10 @@ struct GreedyRescue
 {
   static void Run(const VictimList& victims, const HospitalList& hospitals,
                   ActionSequenceList* actionSequences);
+
+  template <typename Distance>
+  static void RunWithDistance(const VictimList& victims, const HospitalList& hospitals,
+                  ActionSequenceList* actionSequences);
 };
 
 }

@@ -85,23 +85,34 @@ struct UpdateNotBleedingAtSimTime
   int simTime;
 };
 
+/// <summary> A functor for the Manhattan distance. </summary>
+struct ManhattanDistanceFunctor
+{
+  inline int operator()(const Point& a, const Point& b)
+  {
+    return ManhattanDistance(a, b);
+  }
+};
+
 /// <summary> Find object with position closest to a given point. </summary>
-template <typename HasPositionType>
+template <typename HasPositionType, typename Distance>
 struct ForEachFindClosestToPoint
 {
   ForEachFindClosestToPoint(const Point& point_)
     : point(point_),
       closestDist(std::numeric_limits<int>::max()),
+      distanceMetric(Distance()),
       closest(NULL)
   {}
   ForEachFindClosestToPoint(const ForEachFindClosestToPoint& rhs)
     : point(rhs.point),
       closestDist(rhs.closestDist),
+      distanceMetric(rhs.distanceMetric),
       closest(rhs.closest)
   {}
   inline void operator()(HasPositionType* hasPositionType)
   {
-    const int dist = ManhattanDistance(point, hasPositionType->position);
+    const int dist = distanceMetric(point, hasPositionType->position);
     if (dist < closestDist)
     {
       closestDist = dist;
@@ -110,7 +121,7 @@ struct ForEachFindClosestToPoint
   }
   inline void operator()(HasPositionType& hasPositionType)
   {
-    const int dist = ManhattanDistance(point, hasPositionType.position);
+    const int dist = distanceMetric(point, hasPositionType.position);
     if (dist < closestDist)
     {
       closestDist = dist;
@@ -119,22 +130,24 @@ struct ForEachFindClosestToPoint
   }
   Point point;
   int closestDist;
+  Distance distanceMetric;
   HasPositionType* closest;
 };
 
 /// <summary> Find bleeding victim closest to a given point. </summary>
+template <typename Distance>
 struct ForEachFindClosestBleedingToPoint
-  : public ForEachFindClosestToPoint<SimVictim>
+  : public ForEachFindClosestToPoint<SimVictim, Distance>
 {
   ForEachFindClosestBleedingToPoint(const Point& point_)
-    : ForEachFindClosestToPoint<SimVictim>(point_)
+    : ForEachFindClosestToPoint<SimVictim, Distance>(point_)
   {}
   inline void operator()(SimVictim* simVictim)
   {
     // Filter based on bleeding only.
     if (SimVictim::Status_Bleeding == simVictim->simStatus)
     {
-      ForEachFindClosestToPoint<SimVictim>::operator()(simVictim);
+      ForEachFindClosestToPoint<SimVictim, Distance>::operator()(simVictim);
     }
   }
 private:
@@ -146,14 +159,21 @@ private:
 void GreedyRescue::Run(const VictimList& victims, const HospitalList& hospitals,
                        ActionSequenceList* actionSequences)
 {
+  GreedyRescue::RunWithDistance<detail::ManhattanDistanceFunctor>(victims, hospitals, actionSequences);
+}
+
+template <typename Distance>
+void GreedyRescue::RunWithDistance(const VictimList& victims, const HospitalList& hospitals,
+                       ActionSequenceList* actionSequences)
+{
   assert(actionSequences);
 
   typedef std::vector<detail::AmbulanceMinHeapRecord> AmbulanceHeap;
   typedef
-    detail::ForEachFindClosestBleedingToPoint
+    detail::ForEachFindClosestBleedingToPoint<Distance>
     ClosestBleedingVictimFinder;
   typedef
-    detail::ForEachFindClosestToPoint<const Hospital>
+    detail::ForEachFindClosestToPoint<const Hospital, detail::ManhattanDistanceFunctor>
     ClosestHospitalFinder;
 
   // Need someone to rescue and something to pick them up.
