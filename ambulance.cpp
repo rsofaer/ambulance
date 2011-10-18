@@ -65,7 +65,8 @@ void SaveVictims(const std::string& filename, const int iterations)
   }
   // Rescue people and print output format.
   ActionSequenceList actionSequences;
-  GreedyRescue::Run(victims, hospitals, &actionSequences);
+  int rescued;
+  GreedyRescue::Run(victims, hospitals, &actionSequences, &rescued);
   std::cout << ActionSequenceListFormatter(victims, hospitals, actionSequences)
             << std::endl;
 

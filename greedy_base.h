@@ -29,7 +29,8 @@ struct GreedyBase
   static void Run(const VictimList& victims,
                   const HospitalList& hospitals,
                   ScoreFunc* scoreFunc,
-                  ActionSequenceList* actionSequences);
+                  ActionSequenceList* actionSequences,
+                  int* rescued);
 };
 
 /// <summary> Records for sorting ambulances by simulation time. </summary>
@@ -199,7 +200,8 @@ template <typename ScoreFunc>
 void GreedyBase::Run(const VictimList& victims,
                      const HospitalList& hospitals,
                      ScoreFunc* scoreFunc,
-                     ActionSequenceList* actionSequences)
+                     ActionSequenceList* actionSequences,
+                     int* rescued)
 {
   assert(actionSequences);
 
@@ -279,7 +281,7 @@ void GreedyBase::Run(const VictimList& victims,
   //   However, this does not show a definitive improvement.
   //std::random_shuffle(ambulanceHeap.begin(), ambulanceHeap.end());
   // Greedy search.
-  int rescued = 0;
+  *rescued = 0;
   do
   {
     // Get the ambulance with the smallest time.
@@ -346,7 +348,7 @@ void GreedyBase::Run(const VictimList& victims,
                                            victimTimeToLive);
           // Pickup victim and update ambulance positon.
           pickupVictim->simStatus = SimVictim::Status_Rescued;
-          ++rescued;
+          ++(*rescued);
           ambulance->pickedUp.push_back(pickupVictim);
           ambulance->position = pickupVictim->position;
           actionSequence->push_back(ActionNode(pickupVictim->id,

@@ -22,16 +22,18 @@ struct GreedyRescue
 //      const float timeMult = 1.0f / static_cast<float>(b.timeToLive);
       const float dist = static_cast<float>(ManhattanDistance(a, b.position));
       const float timeMult = static_cast<float>(b.timeToLive);
-      return dist * timeMult;
+      return dist * timeMult * timeMult;
     }
   };
   inline static void Run(const VictimList& victims,
                          const HospitalList& hospitals,
-                         ActionSequenceList* actionSequences)
+                         ActionSequenceList* actionSequences,
+                         int* rescued)
   {
     //ManhattanDistanceScore scoreFunc;
     ManhattanDistInverseTTLScore scoreFunc;
-    detail::GreedyBase::Run(victims, hospitals, &scoreFunc, actionSequences);
+    detail::GreedyBase::Run(victims, hospitals, &scoreFunc,
+                            actionSequences, rescued);
   }
 };
 
