@@ -1,13 +1,36 @@
-#include "greedy.h"
+#ifndef _HPS_AMBULANCE_GREEDY_BASE_H_
+#define _HPS_AMBULANCE_GREEDY_BASE_H_
 
 namespace hps
 {
 namespace ambulance
 {
 
+/// </summary> A simple Manhattan distance score. </summary>
+struct ManhattanDistanceScore
+{
+  typedef int result_type;
+  template <typename HasPositionType>
+  inline int operator()(const Point& a, const HasPositionType& b) const
+  {
+    return ManhattanDistance(a, b.position);
+  }
+};
+
 namespace detail
 {
 
+/// <summary> The core logic for greedy algorithms. </summary>
+struct GreedyBase
+{
+  template <typename ScoreFunc>
+  static void Run(const VictimList& victims,
+                  const HospitalList& hospitals,
+                  ScoreFunc* scoreFunc,
+                  ActionSequenceList* actionSequences);
+};
+
+/// <summary> Records for sorting ambulances by simulation time. </summary>
 struct AmbulanceMinHeapRecord
 {
   AmbulanceMinHeapRecord() : ambulance(NULL), actionSequence(NULL) {}
@@ -73,7 +96,6 @@ struct UpdateNotBleedingAtSimTime
           return false;
         }
       }
-    case SimVictim::Status_PickedUp:
     case SimVictim::Status_Rescued:
     case SimVictim::Status_Expired:
       return true;
@@ -85,96 +107,82 @@ struct UpdateNotBleedingAtSimTime
   int simTime;
 };
 
-/// <summary> A functor for the Manhattan distance. </summary>
-struct ManhattanDistanceFunctor
+/// <summary> Find object with best score near a given point. </summary>
+template <typename HasPositionType, typename ScoreFunc>
+struct ForEachFindBestScore
 {
-  inline int operator()(const Point& a, const Point& b)
-  {
-    return ManhattanDistance(a, b);
-  }
-};
-
-/// <summary> Find object with position closest to a given point. </summary>
-template <typename HasPositionType, typename Distance>
-struct ForEachFindClosestToPoint
-{
-  ForEachFindClosestToPoint(const Point& point_)
+  typedef typename ScoreFunc::result_type ScoreType;
+  ForEachFindBestScore(const Point& point_, ScoreFunc* scoreFunc_)
     : point(point_),
-      closestDist(std::numeric_limits<int>::max()),
-      distanceMetric(Distance()),
-      closest(NULL)
+      scoreFunc(scoreFunc_),
+      bestScore(std::numeric_limits<ScoreType>::max()),
+      bestScored(NULL)
   {}
-  ForEachFindClosestToPoint(const ForEachFindClosestToPoint& rhs)
+  ForEachFindBestScore(const ForEachFindBestScore& rhs)
     : point(rhs.point),
-      closestDist(rhs.closestDist),
-      distanceMetric(rhs.distanceMetric),
-      closest(rhs.closest)
+      scoreFunc(rhs.scoreFunc),
+      bestScore(rhs.bestScore),
+      bestScored(rhs.bestScored)
   {}
   inline void operator()(HasPositionType* hasPositionType)
   {
-    const int dist = distanceMetric(point, hasPositionType->position);
-    if (dist < closestDist)
+    const ScoreType score = (*scoreFunc)(point, *hasPositionType);
+    if (score < bestScore)
     {
-      closestDist = dist;
-      closest = hasPositionType;
+      bestScore = score;
+      bestScored = hasPositionType;
     }
   }
   inline void operator()(HasPositionType& hasPositionType)
   {
-    const int dist = distanceMetric(point, hasPositionType.position);
-    if (dist < closestDist)
+    const int score = (*scoreFunc)(point, hasPositionType);
+    if (score < bestScore)
     {
-      closestDist = dist;
-      closest = &hasPositionType;
+      bestScore = score;
+      bestScored = &hasPositionType;
     }
   }
   Point point;
-  int closestDist;
-  Distance distanceMetric;
-  HasPositionType* closest;
+  ScoreFunc* scoreFunc;
+  ScoreType bestScore;
+  HasPositionType* bestScored;
 };
 
-/// <summary> Find bleeding victim closest to a given point. </summary>
-template <typename Distance>
-struct ForEachFindClosestBleedingToPoint
-  : public ForEachFindClosestToPoint<SimVictim, Distance>
+/// <summary> Find bleeding victim near point with best score. </summary>
+template <typename ScoreFunc>
+struct ForEachFindBestScoreBleeding
+  : public ForEachFindBestScore<SimVictim, ScoreFunc>
 {
-  ForEachFindClosestBleedingToPoint(const Point& point_)
-    : ForEachFindClosestToPoint<SimVictim, Distance>(point_)
+  ForEachFindBestScoreBleeding(const Point& point, ScoreFunc* scoreFunc)
+    : ForEachFindBestScore<SimVictim, ScoreFunc>(point, scoreFunc)
   {}
   inline void operator()(SimVictim* simVictim)
   {
     // Filter based on bleeding only.
     if (SimVictim::Status_Bleeding == simVictim->simStatus)
     {
-      ForEachFindClosestToPoint<SimVictim, Distance>::operator()(simVictim);
+      ForEachFindBestScore<SimVictim, ScoreFunc>::operator()(simVictim);
     }
   }
 private:
-  ForEachFindClosestBleedingToPoint&
-    operator=(const ForEachFindClosestBleedingToPoint&);
+  ForEachFindBestScoreBleeding& operator=(const ForEachFindBestScoreBleeding&);
 };
-}
 
-void GreedyRescue::Run(const VictimList& victims, const HospitalList& hospitals,
-                       ActionSequenceList* actionSequences)
-{
-  GreedyRescue::RunWithDistance<detail::ManhattanDistanceFunctor>(victims, hospitals, actionSequences);
-}
-
-template <typename Distance>
-void GreedyRescue::RunWithDistance(const VictimList& victims, const HospitalList& hospitals,
-                       ActionSequenceList* actionSequences)
+template <typename ScoreFunc>
+void GreedyBase::Run(const VictimList& victims,
+                     const HospitalList& hospitals,
+                     ScoreFunc* scoreFunc,
+                     ActionSequenceList* actionSequences)
 {
   assert(actionSequences);
 
   typedef std::vector<detail::AmbulanceMinHeapRecord> AmbulanceHeap;
   typedef
-    detail::ForEachFindClosestBleedingToPoint<Distance>
-    ClosestBleedingVictimFinder;
+    ForEachFindBestScoreBleeding<ScoreFunc>
+    BestBleedingVictimFinder;
   typedef
-    detail::ForEachFindClosestToPoint<const Hospital, detail::ManhattanDistanceFunctor>
-    ClosestHospitalFinder;
+    ForEachFindBestScore<const Hospital, ManhattanDistanceScore>
+    BestHospitalFinder;
 
   // Need someone to rescue and something to pick them up.
   if (victims.empty() || hospitals.empty())
@@ -240,6 +248,9 @@ void GreedyRescue::RunWithDistance(const VictimList& victims, const HospitalList
                                                              &*actionSequence));
     }
   }
+  // reissb -- 20111018 -- The order to the heap may be randomized initially.
+  //   However, this does not show a definitive improvement.
+  //std::random_shuffle(ambulanceHeap.begin(), ambulanceHeap.end());
   // Greedy search.
   int rescued = 0;
   do
@@ -260,22 +271,26 @@ void GreedyRescue::RunWithDistance(const VictimList& victims, const HospitalList
     int victimsPickedUp = 0;
     for (; victimsPickedUp < 4; ++victimsPickedUp)
     {
-      // Find closest bleeding victim to this ambulance.
-      ClosestBleedingVictimFinder closestVictim =
+      // Find best scored bleeding victim to this ambulance.
+      BestBleedingVictimFinder bestVictim =
         std::for_each(bleedingVictims.begin(), bleedingVictims.end(),
-                      ClosestBleedingVictimFinder(ambulance->position));
-      assert(NULL != closestVictim.closest);
-      SimVictim* const pickupVictim = closestVictim.closest;
+                      BestBleedingVictimFinder(ambulance->position, scoreFunc));
+      assert(NULL != bestVictim.bestScored);
+      SimVictim* const pickupVictim = bestVictim.bestScored;
       // See if this person may be picked up without death.
-      const Point& victimPosition = pickupVictim->position;
-      ClosestHospitalFinder closestHospital =
+      static ManhattanDistanceScore s_manhattanScore;
+      BestHospitalFinder bestHospital =
         std::for_each(hospitals.begin(), hospitals.end(),
-                      ClosestHospitalFinder(victimPosition));
+                      BestHospitalFinder(pickupVictim->position,
+                                         &s_manhattanScore));
       // Estimated time to pickup.
-      const int pickupThisVictimTime =
-        VictimLoadTime + (closestVictim.closestDist * DriveOneBlockTime);
-      const int returnFromVictimtime =
-        VictimUnloadTime + (closestHospital.closestDist * DriveOneBlockTime);
+      const int victimDist = ManhattanDistance(ambulance->position,
+                                               pickupVictim->position);
+      const int pickupThisVictimTime = VictimLoadTime +
+                                       (victimDist * DriveOneBlockTime);
+      const int hospitalDist = bestHospital.bestScore;
+      const int returnFromVictimtime = VictimUnloadTime +
+                                       (hospitalDist * DriveOneBlockTime);
       // See if this victim will make it.
       const int newRouteTime = pickupTime +
                                pickupThisVictimTime + returnFromVictimtime;
@@ -293,11 +308,11 @@ void GreedyRescue::RunWithDistance(const VictimList& victims, const HospitalList
         pickupVictim->simStatus = SimVictim::Status_Rescued;
         ++rescued;
         ambulance->pickedUp.push_back(pickupVictim);
-        ambulance->position = victimPosition;
+        ambulance->position = pickupVictim->position;
         actionSequence->push_back(ActionNode(pickupVictim->id,
                                              ActionNode::StopType_Victim));
         // Record hospital.
-        returnHospital = closestHospital.closest;
+        returnHospital = bestHospital.bestScored;
       }
       // We can't pickup the closest so lets just assume that we can't get
       // anyone else even though there may be a pickup reachable by considering
@@ -347,3 +362,7 @@ void GreedyRescue::RunWithDistance(const VictimList& victims, const HospitalList
 
 }
 }
+using namespace ambulance;
+}
+
+#endif //_HPS_AMBULANCE_GREEDY_BASE_H_

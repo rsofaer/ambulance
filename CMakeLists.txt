@@ -11,8 +11,7 @@ project(ambulance_core)
 set(SRCS
     "ambulance_core.cpp"
     "combination.cpp"
-    "data_file.cpp"
-    "greedy.cpp")
+    "data_file.cpp")
 add_library(ambulance_core STATIC ${SRCS} ${HEADERS})
 
 # Copy sample data to build dir.

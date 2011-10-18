@@ -76,6 +76,9 @@ void KMeansGreedyTest(const std::string& filename, const int iterations,
   }
   std::sort(clusterSortList.begin(), clusterSortList.end());
   std::sort(hospitalSortList.begin(), hospitalSortList.end());
+  // reissb -- 20111018 -- Does not seem to affect solution if hospitals are
+  //   assigned in decreasing order.
+  //std::sort(hospitalSortList.begin(), hospitalSortList.end(), std::greater<std::pair<int, int> >());
   // Make k-means hospitals giving the most abulances to the largest clusters.
   HospitalList hospitals(k);
   for (int clusterIdx = 0; clusterIdx < k; ++clusterIdx )

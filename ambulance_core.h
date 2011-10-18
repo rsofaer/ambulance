@@ -50,7 +50,6 @@ struct SimVictim : public Victim
   enum Status
   {
     Status_Bleeding,
-    Status_PickedUp,
     Status_Rescued,
     Status_Expired,
   };
