@@ -1,5 +1,7 @@
 #ifndef _HPS_AMBULANCE_GREEDY_BASE_H_
 #define _HPS_AMBULANCE_GREEDY_BASE_H_
+#include <limits>
+#include <algorithm>
 
 namespace hps
 {
