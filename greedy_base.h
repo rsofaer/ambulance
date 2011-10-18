@@ -168,6 +168,31 @@ private:
   ForEachFindBestScoreBleeding& operator=(const ForEachFindBestScoreBleeding&);
 };
 
+/// <summary> Create a pair to rank victims by score. </summary>
+template <typename ScoreFunc>
+struct VictimRankGenerator
+{
+  typedef typename ScoreFunc::result_type ScoreType;
+  VictimRankGenerator(const Point& point_, ScoreFunc* scoreFunc_)
+    : point(point_),
+      scoreFunc(scoreFunc_)
+  {}
+  typedef std::pair<ScoreType, SimVictim*> RankPair;
+  inline RankPair operator()(SimVictim* victim) const
+  {
+    if (SimVictim::Status_Bleeding == victim->simStatus)
+    {
+      return std::make_pair((*scoreFunc)(point, *victim), victim);
+    }
+    else
+    {
+      return std::make_pair(std::numeric_limits<ScoreType>::max(), victim);
+    }
+  }
+  Point point;
+  ScoreFunc* scoreFunc;
+};
+
 template <typename ScoreFunc>
 void GreedyBase::Run(const VictimList& victims,
                      const HospitalList& hospitals,
@@ -269,56 +294,68 @@ void GreedyBase::Run(const VictimList& victims,
     const Hospital* returnHospital = NULL;
     int mostCritialVictimTime = std::numeric_limits<int>::max();
     int victimsPickedUp = 0;
+    typedef
+      std::vector<typename VictimRankGenerator<ScoreFunc>::RankPair>
+      RankedVictimList;
+    RankedVictimList rankVictims(bleedingVictims.size());
+    const ScoreFunc::result_type notBleedScore =
+      std::numeric_limits<ScoreFunc::result_type>::max();
     for (; victimsPickedUp < 4; ++victimsPickedUp)
     {
-      // Find best scored bleeding victim to this ambulance.
-      BestBleedingVictimFinder bestVictim =
-        std::for_each(bleedingVictims.begin(), bleedingVictims.end(),
-                      BestBleedingVictimFinder(ambulance->position, scoreFunc));
-      assert(NULL != bestVictim.bestScored);
-      SimVictim* const pickupVictim = bestVictim.bestScored;
-      // See if this person may be picked up without death.
-      static ManhattanDistanceScore s_manhattanScore;
-      BestHospitalFinder bestHospital =
-        std::for_each(hospitals.begin(), hospitals.end(),
-                      BestHospitalFinder(pickupVictim->position,
-                                         &s_manhattanScore));
-      // Estimated time to pickup.
-      const int victimDist = ManhattanDistance(ambulance->position,
-                                               pickupVictim->position);
-      const int pickupThisVictimTime = VictimLoadTime +
-                                       (victimDist * DriveOneBlockTime);
-      const int hospitalDist = bestHospital.bestScore;
-      const int returnFromVictimtime = VictimUnloadTime +
-                                       (hospitalDist * DriveOneBlockTime);
-      // See if this victim will make it.
-      const int newRouteTime = pickupTime +
-                               pickupThisVictimTime + returnFromVictimtime;
-      // Can we pick this fella up?
-      const int victimTimeToLive = pickupVictim->timeToLive;
-      if ((newRouteTime <= victimTimeToLive) &&
-          (newRouteTime <= mostCritialVictimTime))
+      // Rank all victims based on score.
+      VictimRankGenerator<ScoreFunc> rankGen(ambulance->position, scoreFunc);
+      std::transform(bleedingVictims.begin(), bleedingVictims.end(),
+                     rankVictims.begin(), rankGen);
+      std::sort(rankVictims.begin(), rankVictims.end());
+      int rankIdx = 0;
+      for (; rankIdx < static_cast<int>(rankVictims.size()); ++rankIdx)
       {
-        // Add this victim pickup and set new return time.
-        pickupTime += pickupThisVictimTime;
-        returnTime = returnFromVictimtime;
-        mostCritialVictimTime = std::min(mostCritialVictimTime,
-                                         victimTimeToLive);
-        // Pickup victim and update ambulance positon.
-        pickupVictim->simStatus = SimVictim::Status_Rescued;
-        ++rescued;
-        ambulance->pickedUp.push_back(pickupVictim);
-        ambulance->position = pickupVictim->position;
-        actionSequence->push_back(ActionNode(pickupVictim->id,
-                                             ActionNode::StopType_Victim));
-        // Record hospital.
-        returnHospital = bestHospital.bestScored;
+        if (notBleedScore == rankVictims[rankIdx].first)
+        {
+          continue;
+        }
+        SimVictim* pickupVictim = rankVictims[rankIdx].second;
+        // See if this person may be picked up without death.
+        static ManhattanDistanceScore s_manhattanScore;
+        BestHospitalFinder bestHospital =
+          std::for_each(hospitals.begin(), hospitals.end(),
+                        BestHospitalFinder(pickupVictim->position,
+                                           &s_manhattanScore));
+        // Estimated time to pickup.
+        const int victimDist = ManhattanDistance(ambulance->position,
+                                                 pickupVictim->position);
+        const int pickupThisVictimTime = VictimLoadTime +
+                                         (victimDist * DriveOneBlockTime);
+        const int hospitalDist = bestHospital.bestScore;
+        const int returnFromVictimtime = VictimUnloadTime +
+                                         (hospitalDist * DriveOneBlockTime);
+        // See if this victim will make it.
+        const int newRouteTime = pickupTime +
+                                 pickupThisVictimTime + returnFromVictimtime;
+        // Can we pick this fella up?
+        const int victimTimeToLive = pickupVictim->timeToLive;
+        if ((newRouteTime <= victimTimeToLive) &&
+            (newRouteTime <= mostCritialVictimTime))
+        {
+          // Add this victim pickup and set new return time.
+          pickupTime += pickupThisVictimTime;
+          returnTime = returnFromVictimtime;
+          mostCritialVictimTime = std::min(mostCritialVictimTime,
+                                           victimTimeToLive);
+          // Pickup victim and update ambulance positon.
+          pickupVictim->simStatus = SimVictim::Status_Rescued;
+          ++rescued;
+          ambulance->pickedUp.push_back(pickupVictim);
+          ambulance->position = pickupVictim->position;
+          actionSequence->push_back(ActionNode(pickupVictim->id,
+                                               ActionNode::StopType_Victim));
+          // Record hospital.
+          returnHospital = bestHospital.bestScored;
+          break;
+        }
       }
-      // We can't pickup the closest so lets just assume that we can't get
-      // anyone else even though there may be a pickup reachable by considering
-      // the distance to the hospitals at the same time as the distance to the
-      // victims.
-      else
+      // Did we find nobody?
+      if (rankIdx == static_cast<int>(rankVictims.size()))
       {
         break;
       }

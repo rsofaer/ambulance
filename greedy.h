@@ -18,8 +18,10 @@ struct GreedyRescue
     typedef float result_type;
     inline float operator()(const Point& a, const Victim& b)
     {
+//      const float dist = static_cast<float>(ManhattanDistance(a, b.position));
+//      const float timeMult = 1.0f / static_cast<float>(b.timeToLive);
       const float dist = static_cast<float>(ManhattanDistance(a, b.position));
-      const float timeMult = 1.0f / static_cast<float>(b.timeToLive);
+      const float timeMult = static_cast<float>(b.timeToLive);
       return (dist * dist) * timeMult;
     }
   };
