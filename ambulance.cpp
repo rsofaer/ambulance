@@ -24,11 +24,12 @@ void SaveVictims(const std::string& filename, const int iterations)
   VictimList victims;
   HospitalAmbulanceList hospitalAmbulances;
   LoadDataFile(filename, &victims, &hospitalAmbulances);
-  ActionSequenceList actionSequences;
-  HospitalList hospitals;
-  int mostRescued = -1;
+  HospitalList bestHospitals;
+  ActionSequenceList bestActionSeq;
+  int bestRescued = -1;
   for (int iteration = 0; iteration < iterations; ++iteration)
   {
+    HospitalList hospitals;
     // Get points and k.
     KMeans<Point>::PointList points;
     points.reserve(victims.size());
@@ -57,7 +58,9 @@ void SaveVictims(const std::string& filename, const int iterations)
     }
     std::sort(clusterSortList.begin(), clusterSortList.end());
     std::sort(hospitalSortList.begin(), hospitalSortList.end());
-    
+    // reissb -- 20111018 -- Does not seem to affect solution if hospitals are
+    //   assigned in decreasing order.
+    //std::sort(hospitalSortList.begin(), hospitalSortList.end(), std::greater<std::pair<int, int> >());
     // Make k-means hospitals giving the most abulances to the largest clusters.
     hospitals.resize(k);
     for (int clusterIdx = 0; clusterIdx < k; ++clusterIdx )
@@ -70,18 +73,19 @@ void SaveVictims(const std::string& filename, const int iterations)
       hospitals[hospitalIdx].ambulances = hospitalRecord.first;
     }
     // Rescue people and print output format.
+    ActionSequenceList actionSequences;
     int rescued;
-    ActionSequenceList trialActionSeq;
-    GreedyRescue::Run(victims, hospitals, &trialActionSeq, &rescued);
-    if (rescued > mostRescued)
+    GreedyRescue::Run(victims, hospitals, &actionSequences, &rescued);
+    if (rescued > bestRescued)
     {
-      mostRescued = rescued;
-      actionSequences = trialActionSeq;
+      bestRescued = rescued;
+      bestActionSeq = actionSequences;
+      bestHospitals = hospitals;
+      //std::cout << "New best " << bestRescued << "." << std::endl;
     }
   }
-  std::cout << ActionSequenceListFormatter(victims, hospitals, actionSequences)
+  std::cout << ActionSequenceListFormatter(victims, bestHospitals, bestActionSeq)
             << std::endl;
-
 }
 
 int main(int argc, char* argv[])

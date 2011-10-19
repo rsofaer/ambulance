@@ -96,8 +96,8 @@ void KMeansGreedyTest(const std::string& filename, const int iterations,
   ActionSequenceList actionSequences;
   int rescued;
   GreedyRescue::Run(victims, hospitals, &actionSequences, &rescued);
-//  std::cout << ActionSequenceListFormatter(victims, hospitals, actionSequences)
-//            << std::endl;
+  std::cout << ActionSequenceListFormatter(victims, hospitals, actionSequences)
+            << std::endl;
   ASSERT_TRUE(ValidateAmbulance(victims, hospitals, actionSequences,
                                 numRescued));
   std::cout << "Rescued " << *numRescued << " victims for input file "
